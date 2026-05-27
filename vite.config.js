@@ -3,4 +3,12 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    extensions: ['.js', '.jsx', '.ts', '.tsx']
+  },
+  build: {
+    rollupOptions: {
+      input: 'index.html'
+    }
+  }
 })
