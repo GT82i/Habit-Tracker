@@ -24,6 +24,7 @@ const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov
 const ICONS  = ["◉","◐","◆","◈","○","◑","◇","△","□","★","♦","●"];
 const COLORS = ["#E8654A","#7B68EE","#4CAF82","#E8A44A","#5BC0EB","#4A90D9","#E8748A","#9B8EA8","#66B2A4","#D4A853"];
 
+// ── Supabase helpers ───────────────────────────────────────────────────────
 async function dbGet(id) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/habit_data?id=eq.${id}&select=data`, {
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
@@ -45,6 +46,7 @@ async function dbSet(id, data) {
   });
 }
 
+// ── Date helpers ───────────────────────────────────────────────────────────
 function dateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
 }
@@ -60,6 +62,7 @@ function getWeekDates(offset = 0) {
   return Array.from({length:7}, (_, i) => { const d = new Date(start); d.setDate(start.getDate()+i); return d; });
 }
 
+// ── Log Modal ──────────────────────────────────────────────────────────────
 function LogModal({ habit, dateStr, existing, onSave, onClose }) {
   const [data, setData] = useState(existing || {});
   const FIELD_META = {
@@ -97,6 +100,7 @@ function LogModal({ habit, dateStr, existing, onSave, onClose }) {
   );
 }
 
+// ── Main ───────────────────────────────────────────────────────────────────
 export default function HabitTracker() {
   const [habits,      setHabits]      = useState(DEFAULT_HABITS);
   const [completions, setCompletions] = useState({});
@@ -117,6 +121,7 @@ export default function HabitTracker() {
 
   useEffect(() => { setWeekDates(getWeekDates(weekOffset)); }, [weekOffset]);
 
+  // Load from Supabase
   useEffect(() => {
     async function load() {
       try {
@@ -135,6 +140,7 @@ export default function HabitTracker() {
     load();
   }, []);
 
+  // Streaks
   useEffect(() => {
     const s = {};
     habits.forEach(h => {
@@ -246,6 +252,7 @@ export default function HabitTracker() {
       {toast && <div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:"#2A2840",color:"#E8E4DC",padding:"10px 24px",borderRadius:40,zIndex:999,fontSize:13,border:"1px solid rgba(255,255,255,0.1)",boxShadow:"0 8px 32px rgba(0,0,0,0.4)",animation:"fadeIn 0.2s ease",whiteSpace:"nowrap"}}>{toast}</div>}
       {logModal && <LogModal habit={logModal.habit} dateStr={dateKey(logModal.date)} existing={logs[dateKey(logModal.date)]?.[logModal.habit.id]} onSave={d=>saveLog(logModal.habit.id,logModal.date,d)} onClose={()=>setLogModal(null)}/>}
 
+      {/* Header */}
       <div style={{padding:"40px 24px 20px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
         <div style={{maxWidth:520,margin:"0 auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
@@ -263,6 +270,7 @@ export default function HabitTracker() {
           <div style={{height:3,background:"rgba(255,255,255,0.07)",borderRadius:2,overflow:"hidden",marginTop:14}}>
             <div style={{height:"100%",width:`${score.pct}%`,background:score.pct===100?"#4CAF82":"#7B68EE",borderRadius:2,transition:"width 0.5s ease"}}/>
           </div>
+          {/* Mood */}
           <div style={{marginTop:18,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
             <span style={{fontSize:11,color:"#7A7490",letterSpacing:"0.1em",textTransform:"uppercase",flexShrink:0}}>Today's mood</span>
             <div style={{display:"flex",gap:6,marginLeft:4}}>
@@ -275,6 +283,7 @@ export default function HabitTracker() {
         </div>
       </div>
 
+      {/* Tabs */}
       <div style={{maxWidth:520,margin:"0 auto",padding:"16px 24px 0",display:"flex",gap:8,alignItems:"center"}}>
         {["week","stats"].map(v => (
           <button key={v} onClick={()=>setView(v)} style={{padding:"6px 18px",borderRadius:40,border:"1px solid rgba(255,255,255,0.1)",background:view===v?"#2A2840":"transparent",color:view===v?"#E8E4DC":"#7A7490",fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer"}}>{v}</button>
@@ -284,6 +293,8 @@ export default function HabitTracker() {
       </div>
 
       <div style={{maxWidth:520,margin:"0 auto",padding:"20px 24px 0"}}>
+
+        {/* ══ WEEK VIEW ══ */}
         {view==="week" && <>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
             <button onClick={()=>setWeekOffset(w=>w-1)} style={{background:"none",border:"none",color:"#7A7490",fontSize:20,cursor:"pointer",padding:"4px 8px"}}>←</button>
@@ -291,8 +302,9 @@ export default function HabitTracker() {
             <button onClick={()=>setWeekOffset(w=>Math.min(0,w+1))} style={{background:"none",border:"none",color:weekOffset>=0?"#3A3656":"#7A7490",fontSize:20,cursor:weekOffset>=0?"default":"pointer",padding:"4px 8px"}}>→</button>
           </div>
 
-          <div style={{display:"grid",gridTemplateColumns:"1fr repeat(7, 36px)",gap:4,marginBottom:14,padding:"8px 4px",background:"rgba(255,255,255,0.02)",borderRadius:12}}>
-            <div style={{fontSize:10,color:"#7A7490",display:"flex",alignItems:"center",paddingLeft:8,letterSpacing:"0.05em"}}>MOOD</div>
+          {/* Mood row */}
+          <div style={{display:"grid",gridTemplateColumns:"80px repeat(7, 1fr)",gap:2,marginBottom:14,padding:"8px 6px",background:"rgba(255,255,255,0.02)",borderRadius:12}}>
+            <div style={{fontSize:10,color:"#7A7490",display:"flex",alignItems:"center",paddingLeft:4,letterSpacing:"0.05em"}}>MOOD</div>
             {weekDates.map(d => {
               const key=dateKey(d), mv=moods[key], future=isFuture(d), mood=MOODS.find(m=>m.value===mv);
               return (
@@ -310,20 +322,22 @@ export default function HabitTracker() {
             })}
           </div>
 
-          <div style={{display:"grid",gridTemplateColumns:"1fr repeat(7, 36px)",gap:4,marginBottom:6,paddingLeft:4}}>
+          {/* Day numbers */}
+          <div style={{display:"grid",gridTemplateColumns:"80px repeat(7, 1fr)",gap:2,marginBottom:6,paddingLeft:4}}>
             <div/>
             {weekDates.map(d => (
               <div key={d.toString()} style={{textAlign:"center",fontSize:11,color:isToday(d)?"#7B68EE":"#4A4560"}}>{d.getDate()}</div>
             ))}
           </div>
 
+          {/* Habit rows */}
           {habits.map(habit => (
-            <div key={habit.id} style={{display:"grid",gridTemplateColumns:"1fr repeat(7, 36px)",gap:4,alignItems:"center",marginBottom:10,padding:"10px 4px 10px 10px",borderRadius:12,background:"rgba(255,255,255,0.02)"}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-                <span style={{fontSize:18,color:habit.color,flexShrink:0}}>{habit.icon}</span>
+            <div key={habit.id} style={{display:"grid",gridTemplateColumns:"80px repeat(7, 1fr)",gap:2,alignItems:"center",marginBottom:10,padding:"10px 6px 10px 8px",borderRadius:12,background:"rgba(255,255,255,0.02)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0,paddingRight:4}}>
+                <span style={{fontSize:16,color:habit.color,flexShrink:0}}>{habit.icon}</span>
                 <div style={{minWidth:0}}>
-                  <div style={{fontSize:13,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{habit.name}</div>
-                  <div style={{fontSize:10,color:"#7A7490"}}>{streaks[habit.id]>0?`${streaks[habit.id]}d 🔥`:"start today"}</div>
+                  <div style={{fontSize:12,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{habit.name}</div>
+                  <div style={{fontSize:9,color:"#7A7490"}}>{streaks[habit.id]>0?`${streaks[habit.id]}d 🔥`:"start"}</div>
                 </div>
               </div>
               {weekDates.map(d => {
@@ -336,7 +350,7 @@ export default function HabitTracker() {
                       onContextMenu={e=>{e.preventDefault();handleLongPress(habit,d);}}
                       onTouchStart={()=>{if(!future)longPress.current=setTimeout(()=>handleLongPress(habit,d),500);}}
                       onTouchEnd={()=>clearTimeout(longPress.current)}
-                      style={{width:32,height:32,borderRadius:8,border:done?"none":`1.5px solid ${future?"rgba(255,255,255,0.04)":"rgba(255,255,255,0.12)"}`,background:done?habit.color:future?"rgba(255,255,255,0.01)":"transparent",cursor:future?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",transition:"all 0.15s ease"}}>
+                      style={{width:"100%",height:30,borderRadius:6,border:done?"none":`1.5px solid ${future?"rgba(255,255,255,0.04)":"rgba(255,255,255,0.12)"}`,background:done?habit.color:future?"rgba(255,255,255,0.01)":"transparent",cursor:future?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",transition:"all 0.15s ease"}}>
                       {done?"✓":""}
                     </button>
                     {done&&hasLog&&<div style={{position:"absolute",top:-3,right:-3,width:7,height:7,borderRadius:"50%",background:"#E8A44A",border:"1.5px solid #0F0E17"}}/>}
@@ -348,6 +362,7 @@ export default function HabitTracker() {
 
           <div style={{fontSize:11,color:"#3A3656",textAlign:"center",marginTop:4,marginBottom:16}}>Tap to check off · Hold to add details</div>
 
+          {/* Add habit */}
           {showAdd ? (
             <div style={{background:"rgba(255,255,255,0.04)",borderRadius:16,padding:20,marginTop:8,border:"1px solid rgba(255,255,255,0.08)"}}>
               <div style={{fontSize:12,color:"#7A7490",letterSpacing:"0.1em",marginBottom:16,textTransform:"uppercase"}}>New Habit</div>
@@ -369,6 +384,7 @@ export default function HabitTracker() {
           )}
         </>}
 
+        {/* ══ STATS VIEW ══ */}
         {view==="stats" && <>
           <div style={{marginBottom:28,padding:20,borderRadius:16,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)"}}>
             <div style={{fontSize:12,color:"#7A7490",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:16}}>Mood — Last 14 Days</div>
